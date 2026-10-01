@@ -1,13 +1,27 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-from config.database import get_engine
+from config.database import Base, get_engine
+
+from models.paciente_model import Paciente
+from models.usuario_model import Usuario
+from controllers.auth_controller import router as auth_router
+
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=get_engine())
+    yield
 
 app = FastAPI(
     title="Nutri API",
     description="API REST para el proyecto Nutri.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 
@@ -35,3 +49,5 @@ def health_database():
         ) from error
 
     return {"estado": "ok", "base_de_datos": "conectada"}
+
+app.include_router(auth_router)
